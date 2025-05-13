@@ -3,29 +3,45 @@ import axios from 'axios';
 import { StyleSheet, View, FlatList, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Avatar, Input, Icon, Button, ListItem, Text } from "react-native-elements";
+import { Avatar, Input, Icon, Button, ListItem, Text} from "react-native-elements";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import {auth, getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut} from "firebase/auth"
 
 const API_URL = 'http://localhost:3000';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCixE58l6bCxrn3_qgWdM1iMdWZeRrL8lo",
+  authDomain: "aulabasemobile.firebaseapp.com",
+  projectId: "aulabasemobile",
+  storageBucket: "aulabasemobile.firebasestorage.app",
+  messagingSenderId: "696693663088",
+  appId: "1:696693663088:web:ac5cf81bc0bcba679fdbb5",
+  measurementId: "G-WWXWPF5GDE"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
 
 function Tela1({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  const handleLogin = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/usuarios`, {
-        params: { email, senha }
-      });
+  const handleLogin = () => {
+    const auth = getAuth();
+    signInWithEmailAndPassword(auth, email, senha)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        console.log("Usuário logado:", user.email);
+        navigation.navigate('Contatos')
+      })
+      .catch((error) => {
+        console.log("Erro:", error.message);
+        alert("Erro ao logar")
 
-      if (response.data.length > 0) {
-        navigation.navigate('Contatos');
-      } else {
-        Alert.alert('Erro', 'E-mail ou senha incorretos');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível conectar ao servidor');
-    }
+      });
   };
 
   return (
@@ -79,25 +95,25 @@ function Tela2({ navigation }) {
 }
 
 function Tela3({ navigation }) {
-  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
 
   const cadastrarUsuario = () => {
-    axios.post(`${API_URL}/usuarios`, { nome, email, cpf, senha })
-      .then(() => {
-        Alert.alert("Sucesso", "Usuário cadastrado!");
-        navigation.goBack();
-      }).catch(error => console.log(error));
+    const auth = getAuth();
+    createUserWithEmailAndPassword(auth, email, senha)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        console.log("Usuário logado:", user.email);
+      })
+      .catch((error) => {
+        console.log("Erro:", error.message);
+      });
   };
 
   return (
     <View style={styles.container}>
       <Text h4 style={{ marginBottom: 20 }}>Cadastro de Usuário</Text>
-      <Input placeholder='Nome Completo' value={nome} onChangeText={setNome} leftIcon={<Icon name='user' size={24} color='black' />} />
       <Input placeholder='E-mail' value={email} onChangeText={setEmail} leftIcon={<Icon name='email' size={24} color='black' />} />
-      <Input placeholder='CPF' value={cpf} onChangeText={setCpf} leftIcon={<Icon name='id-card' type="font-awesome" size={24} color='black' />} />
       <Input placeholder='Senha' value={senha} onChangeText={setSenha} secureTextEntry leftIcon={<Icon name='lock' size={24} color='black' />} />
       <Button title="Cadastrar" buttonStyle={styles.button} onPress={cadastrarUsuario} />
     </View>
